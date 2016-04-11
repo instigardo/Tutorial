@@ -1,0 +1,16 @@
+Go to the following link and get yourself registered for the course.
+There are 2 options for the course,
+1. Free Go through (audit) course.
+2. Paid course with certification $29 (Recommended).
+
+Go through the course syllabus and everything before you proceed.
+https://www.coursera.org/learn/r-programming
+
+Download the following books, this will be really helpful in understanding the concepts.
+https://leanpub.com/artofdatascience/             --Really helpful for understanding the basics of data.
+https://leanpub.com/rprogramming?utm_source=coursera&utm_medium=CourseraEmail&utm_campaign=Coursera
+Select to get it for free, and download pdf copy of it. If you are facing any problem in it, let me know I have downloaded copy of it.
+
+
+
+
