@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Form Elements</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css" rel="stylesheet">
+    <link href="animate.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+        <div id="page-wrapper" class="gray-bg">
+
+            <div class="row wrapper border-bottom white-bg page-heading">
+                <div class="col-lg-10">
+                    <h2>Index</h2>
+                </div>
+                <div class="col-lg-2">
+                </div>
+            </div>
+        <div class="wrapper wrapper-content animated fadeInRight">
+            <div class="row">
+            <div class="col-lg-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>Input fields for JSON</h5>
+                    <div class="ibox-tools">
+                        <a class="collapse-link">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label class="font-noraml">Environment*</label>
+                            <div class="input-group">
+                                <select id="environment" name="environment" data-placeholder="Select an Environment" class="chosen-select" style="width:350px;" tabindex="2" required>
+                                <option value="" hidden>Select an Environment</option>
+                                <option value="c360">c360</option>
+                                <option value="usas">usas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-noraml">Validation Type*</label>
+                            <div class="input-group">
+                                <select id="rule" name="rule" data-placeholder="Select a Validation Type" class="chosen-select" style="width:350px;" tabindex="2" required>
+                                <option value="" hidden>Select a Validation Type</option>
+                                <option value="day">day</option>
+                                <option value="hour">hour</option>
+                                <option value="value">value</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-group">
+                            <label class="font-noraml">Hive Schema*</label>
+                            <div class="input-group">
+                                <select id="database" name="database" data-placeholder="Select a Hive Schema" class="chosen-select" style="width:350px;" tabindex="2" required>
+                                <option value="" hidden>Select a Hive Schema</option>
+                                <option value="cst">cst</option>
+                                <option value="sandbox">sandbox</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-noraml">Hive Table*</label>
+                            <div class="input-group">
+                                <input id="table" name="table" type="text" class="form-control" placeholder="Specify a Hive table" style="width:350px;" tabindex="2" required>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div class="btn-group">
+                            <label title="Donload image" id="download" class="btn btn-primary">Submit</label>
+                    </div>
+                </div>
+                </div>
+
+            </div>
+            </div>
+
+        </div>
+        <div class="footer fixed">
+            <div></div>
+            <div class="pull-right">
+                <strong>&copy; Copyright</strong>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <!-- Mainly scripts -->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- Custom and plugin javascript -->
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js"></script>
+    <script>
+        $(document).ready(function(){
+            var config = {
+                '.chosen-select'           : {},
+                '.chosen-select-deselect'  : {allow_single_deselect:true},
+                '.chosen-select-no-single' : {disable_search_threshold:10},
+                '.chosen-select-no-results': {no_results_text:'Oops, nothing found!'},
+                '.chosen-select-width'     : {width:"95%"}
+                }
+            for (var selector in config) {
+                $(selector).chosen(config[selector]);
+            }
+
+            $("#download").click(function() {
+                var environment = $("#environment").val();
+                var rule = $("#rule").val();
+                var database = $("#database").val();
+                var table = $("#table").val();
+                if(environment==""||rule==""||database==""||table=="")
+                    alert('Please fill all fields')
+                else{
+                    $.get("http://127.0.0.1:5100/json",{"environment":environment, "rule":rule, "database":database, "table":table},function(data){
+                        alert(data);
+
+                    });
+                }
+
+            });
+});
+
+
+
+    </script>
+</body>
+</html>
