@@ -1,0 +1,220 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters":{
+	"privateSubnet1AZ":{
+		"Type":"AWS::EC2::AvailabilityZone::Name"
+	},
+	"privateSubnet2AZ":{
+		"Type":"AWS::EC2::AvailabilityZone::Name"
+	},
+	"BastionKey":{
+		"Type":"AWS::EC2::KeyPair::KeyName"
+	},
+	"EBSKey":{
+		"Type":"AWS::EC2::KeyPair::KeyName"
+	},
+	"AMI":{
+		"Type":"String"
+	}
+  },
+  "Resources": {
+    "EBSVPC": {
+     "Type" : "AWS::EC2::VPC",
+     "Properties" : {
+        "CidrBlock" : "10.0.0.0/16"
+      }
+	},
+	"PrivateRouteTable":{
+	   "Type" : "AWS::EC2::RouteTable",
+	   "Properties" : {
+		  "VpcId" : { "Ref" : "EBSVPC" }
+	   }
+	},
+	"NAT" : {
+	  "DependsOn" : "VPCGatewayAttach",
+	  "Type" : "AWS::EC2::NatGateway",
+	  "Properties" : {
+		"AllocationId" : { "Fn::GetAtt" : ["EIPNAT", "AllocationId"]},
+		"SubnetId" : { "Ref" : "Subnet"}
+	  }
+	},
+	"EIPNAT" : {
+	  "Type" : "AWS::EC2::EIP",
+	  "Properties" : {
+		"Domain" : "vpc"
+	  }
+	},
+	"PrivateRoute" : {
+	  "Type" : "AWS::EC2::Route",
+	  "Properties" : {
+		"RouteTableId" : { "Ref" : "PrivateRouteTable" },
+		"DestinationCidrBlock" : "0.0.0.0/0",
+		"NatGatewayId" : { "Ref" : "NAT" }
+	  }
+	},
+	"privateSubnet1":{
+         "Type" : "AWS::EC2::Subnet",
+         "Properties" : {
+            "VpcId" : { "Ref" : "EBSVPC" },
+            "CidrBlock" : "10.0.1.0/24",
+            "AvailabilityZone" : { "Ref" : "privateSubnet1AZ" }
+      }
+    },
+	"privateSubnet2":{
+         "Type" : "AWS::EC2::Subnet",
+         "Properties" : {
+            "VpcId" : { "Ref" : "EBSVPC" },
+            "CidrBlock" : "10.0.2.0/24",
+            "AvailabilityZone" : { "Ref" : "privateSubnet2AZ" }
+      }
+    },
+	"SubnetRouteTableAssociation1":{
+	   "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+	   "Properties" : {
+		  "RouteTableId" : { "Ref" : "PrivateRouteTable" },
+		  "SubnetId" : { "Ref" : "privateSubnet1" }
+	   }
+	},
+	"SubnetRouteTableAssociation2":{
+	   "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+	   "Properties" : {
+		  "RouteTableId" : { "Ref" : "PrivateRouteTable" },
+		  "SubnetId" : { "Ref" : "privateSubnet2" }
+	   }
+	},  
+    "sampleApplication": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "Description": "AWS Elastic Beanstalk Sample Application"
+      }
+    },
+    "sampleConfigurationTemplate": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": { "Ref": "sampleApplication" },
+        "Description": "AWS ElasticBeanstalk Sample Configuration Template",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MinSize",
+            "Value": "2"
+          },
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "MaxSize",
+            "Value": "2"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "EnvironmentType",
+            "Value": "LoadBalanced"
+          },
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "VPCId",
+            "Value": { "Ref" : "EBSVPC" }
+          },
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "Subnets",
+            "Value": { "Ref" : "privateSubnet1" }
+          }	,
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "Subnets",
+            "Value": { "Ref" : "privateSubnet2" }
+          },
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "EC2KeyName",
+            "Value": { "Ref" : "EBSKey" }
+          },
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "SecurityGroups",
+            "Value": { "Ref" : "EBSSG" }
+          },
+		  
+        ],
+        "SolutionStackName": "64bit Amazon Linux 2017.03 v2.7.2 running Docker 17.03.1-ce"
+      }
+    },
+    "sampleEnvironment": {
+      "Type": "AWS::ElasticBeanstalk::Environment",
+      "Properties": {
+        "ApplicationName": { "Ref": "sampleApplication" },
+        "Description": "AWS ElasticBeanstalk Sample Environment",
+        "TemplateName": { "Ref": "sampleConfigurationTemplate" }
+      }
+    },
+	"EBSSG":{
+		"Type" : "AWS::EC2::SecurityGroup",
+	   "Properties" : {
+		  "GroupDescription" : "Allow ssh to EBS instance via bastion host",
+		  "VpcId" : {"Ref" : "EBSVPC"},
+		  "SecurityGroupIngress" : [{
+				"IpProtocol" : "tcp",
+				"FromPort" : "22",
+				"ToPort" : "22",
+				"CidrIp" : "0.0.0.0/0"
+			 }],
+		  "SecurityGroupEgress" : [{
+			 "IpProtocol" : "tcp",
+			 "FromPort" : "22",
+			 "ToPort" : "22",
+			 "CidrIp" : "0.0.0.0/0"
+		  }]
+	   }
+	},
+	"BastionHostSG":{
+		"Type" : "AWS::EC2::SecurityGroup",
+	   "Properties" : {
+		  "GroupDescription" : "Allow ssh to bastion host",
+		  "VpcId" : {"Ref" : "EBSVPC"},
+		  "SecurityGroupIngress" : [{
+				"IpProtocol" : "tcp",
+				"FromPort" : "22",
+				"ToPort" : "22",
+				"CidrIp" : "0.0.0.0/0"
+			 }],
+		  "SecurityGroupEgress" : [{
+			 "IpProtocol" : "tcp",
+			 "FromPort" : "22",
+			 "ToPort" : "22",
+			 "CidrIp" : "0.0.0.0/0"
+		  }]
+	   }
+	},
+	"EIPBastion" : {
+	  "Type" : "AWS::EC2::EIP",
+	  "Properties" : {
+		"Domain" : "vpc"
+	  }
+	}
+	"BastionHost": {
+         "Type" : "AWS::EC2::Instance",
+         "Properties" : {
+            "ImageId" : { "Ref" : "AMI"},
+            "KeyName" : { "Ref" : "BastionKey"},
+			"SubnetId" : { "Ref" : "privateSubnet1" },
+			"SecurityGroupIds" : [{ "Ref" : "BastionHostSG" }],
+            "BlockDeviceMappings" : [
+               {
+                  "DeviceName" : "/dev/sda",
+                  "Ebs" : {
+                     "VolumeType" : "gp2",
+                     "DeleteOnTermination" : "true",
+                     "VolumeSize" : "30"
+                  }
+               }
+            ]
+        }
+	}
+  },
+  "Outputs":{
+	"ELBURL":{
+	"Value" : {"Fn::GetAtt":["sampleEnvironment","EndpointURL"]}
+	}
+  }
+  
+}
